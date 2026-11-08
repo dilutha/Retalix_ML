@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "product-discontinuation"
+version = "1.0.0"
+description = "Product discontinuation prediction for the Retalix catalogue range refresh"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = ["full_data: tests that read the full raw dataset (slower)"]

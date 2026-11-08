@@ -1,0 +1,27 @@
+{
+  "rows": 3625659,
+  "products": 70227,
+  "product_editions": 178905,
+  "editions": [
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94
+  ],
+  "zero_price_rows": 12880,
+  "zero_actuals_rows": 131608,
+  "groups_with_week_gaps": 7442,
+  "inconsistent_target_groups": 0,
+  "product_details_rows": 77372,
+  "incomplete_editions": [
+    94
+  ],
+  "censored_editions_config": [
+    94
+  ],
+  "labelled_product_editions": 149212,
+  "labelled_group_positive_rate": 0.3627188161810042
+}

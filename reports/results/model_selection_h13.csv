@@ -1,0 +1,4 @@
+model,cv_pr_auc,cv_pr_auc_std,cv_roc_auc,cv_balanced_accuracy,best_params
+hist_gradient_boosting,0.6988037739627567,0.10252841355392726,0.8458950795735233,0.6384249913572573,"{'model__min_samples_leaf': 20, 'model__max_leaf_nodes': 15, 'model__learning_rate': 0.1, 'model__l2_regularization': 1.0}"
+logistic_regression,0.6955765063718675,0.12816437197403135,0.833344238502737,0.7138044498776583,"{'model__C': 0.1, 'model__class_weight': 'balanced'}"
+random_forest,0.6857693189812455,0.09009379399601265,0.8335891508199268,0.6952135918449495,"{'model__n_estimators': 200, 'model__min_samples_leaf': 20, 'model__max_features': 'sqrt', 'model__max_depth': None, 'model__class_weight': 'balanced_subsample'}"

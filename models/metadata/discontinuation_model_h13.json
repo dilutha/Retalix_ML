@@ -1,0 +1,101 @@
+{
+  "model_name": "hist_gradient_boosting",
+  "horizon_weeks": 13,
+  "prediction_unit": "product within a catalogue edition, observed at WeeksOut = -horizon",
+  "decision_threshold": 0.1030733023493059,
+  "threshold_method": "max F1 on out-of-fold predictions of development editions",
+  "feature_columns": [
+    "log_price",
+    "log_actuals",
+    "log_forecast",
+    "forecast_to_actual",
+    "weeks_in_edition",
+    "in_previous_edition",
+    "previous_discontinued",
+    "prior_editions",
+    "forecast_volatility",
+    "actuals_volatility",
+    "actuals_trend",
+    "forecast_trend",
+    "Supplier",
+    "HierarchyLevel1",
+    "HierarchyLevel2",
+    "DIorDOM",
+    "Seasonal",
+    "SpringSummer",
+    "zero_actuals",
+    "price_missing"
+  ],
+  "excluded_features": [
+    "Status (planner listing decision; see leakage investigation)",
+    "ProductKey (identifier)",
+    "observations after the horizon"
+  ],
+  "train_editions": [
+    89,
+    90,
+    91,
+    92
+  ],
+  "test_edition": 93,
+  "cv_test_editions": [
+    90,
+    91,
+    92
+  ],
+  "best_params": {
+    "model__min_samples_leaf": 20,
+    "model__max_leaf_nodes": 15,
+    "model__learning_rate": 0.1,
+    "model__l2_regularization": 1.0
+  },
+  "cv_summary": [
+    {
+      "model": "hist_gradient_boosting",
+      "cv_pr_auc": 0.6988037739627567,
+      "cv_pr_auc_std": 0.10252841355392726,
+      "cv_roc_auc": 0.8458950795735233,
+      "cv_balanced_accuracy": 0.6384249913572573,
+      "best_params": "{'model__min_samples_leaf': 20, 'model__max_leaf_nodes': 15, 'model__learning_rate': 0.1, 'model__l2_regularization': 1.0}"
+    },
+    {
+      "model": "logistic_regression",
+      "cv_pr_auc": 0.6955765063718675,
+      "cv_pr_auc_std": 0.12816437197403135,
+      "cv_roc_auc": 0.833344238502737,
+      "cv_balanced_accuracy": 0.7138044498776583,
+      "best_params": "{'model__C': 0.1, 'model__class_weight': 'balanced'}"
+    },
+    {
+      "model": "random_forest",
+      "cv_pr_auc": 0.6857693189812455,
+      "cv_pr_auc_std": 0.09009379399601265,
+      "cv_roc_auc": 0.8335891508199268,
+      "cv_balanced_accuracy": 0.6952135918449495,
+      "best_params": "{'model__n_estimators': 200, 'model__min_samples_leaf': 20, 'model__max_features': 'sqrt', 'model__max_depth': None, 'model__class_weight': 'balanced_subsample'}"
+    }
+  ],
+  "test_metrics": {
+    "threshold": 0.1030733023493059,
+    "n": 26783.0,
+    "positive_rate": 0.36388754060411455,
+    "roc_auc": 0.9518194884707962,
+    "pr_auc": 0.9146598721484012,
+    "precision": 0.7469100896679861,
+    "recall": 0.9486969012928381,
+    "f1": 0.8357966101694915,
+    "balanced_accuracy": 0.8824015116313342,
+    "accuracy": 0.8643542545644626,
+    "tn": 13904.0,
+    "fp": 3133.0,
+    "fn": 500.0,
+    "tp": 9246.0
+  },
+  "n_train_rows": 89286,
+  "n_test_rows": 26783,
+  "random_state": 42,
+  "model_version": "1.0.0",
+  "trained_at": "2026-11-06T11:06:24+00:00",
+  "sklearn_version": "1.7.2",
+  "model_file": "discontinuation_model_h13.joblib"
+}

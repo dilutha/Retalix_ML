@@ -1,0 +1,12 @@
+# Versions verified in this project (Python 3.10, conda env "ml_env" + .venv)
+pandas==2.3.3
+numpy==1.26.4
+scikit-learn==1.7.2
+matplotlib==3.10.7
+joblib==1.5.2
+pyarrow==21.0.0
+openpyxl==3.1.5
+streamlit==1.50.0
+shap==0.49.1
+pytest==9.2.0
+ipykernel==7.2.0

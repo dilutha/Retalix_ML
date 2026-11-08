@@ -1,0 +1,54 @@
+{
+  "live_editions": [
+    94
+  ],
+  "input_validation": {
+    "rows": 331397,
+    "products": 29693,
+    "product_editions": 29693,
+    "editions": [
+      94
+    ],
+    "zero_price_rows": 577,
+    "zero_actuals_rows": 16446,
+    "groups_with_week_gaps": 1557
+  },
+  "prediction_summary": {
+    "n_predictions": 28101,
+    "mean_probability": 0.1930934391517056,
+    "predicted_positive_rate": 0.4114088466602612,
+    "share_high_risk": 0.4114088466602612,
+    "share_medium_risk": 0.5885911533397388,
+    "share_low_risk": 0.0
+  },
+  "prediction_psi_vs_test": 0.14929989280654068,
+  "features_with_significant_drift": [
+    "SpringSummer",
+    "HierarchyLevel2",
+    "prior_editions",
+    "HierarchyLevel1",
+    "Supplier",
+    "actuals_trend"
+  ],
+  "backtest_outcome_monitoring": {
+    "logged": 26783,
+    "with_outcome": 26783,
+    "label_coverage": 1.0,
+    "metrics": {
+      "threshold": 0.1030733023493059,
+      "n": 26783,
+      "positive_rate": 0.36388754060411455,
+      "roc_auc": 0.9518194884707962,
+      "pr_auc": 0.9146598721484012,
+      "precision": 0.7469100896679861,
+      "recall": 0.9486969012928381,
+      "f1": 0.8357966101694915,
+      "balanced_accuracy": 0.8824015116313342,
+      "accuracy": 0.8643542545644626,
+      "tn": 13904,
+      "fp": 3133,
+      "fn": 500,
+      "tp": 9246
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "model_version": "1.0.0",
+  "trained_at": "2026-11-06T11:06:24+00:00",
+  "rows": 200,
+  "seed": 42,
+  "source_rows": 89286,
+  "editions": [
+    89,
+    90,
+    91,
+    92
+  ],
+  "strategy": "systematic sample of shuffled rows ordered by edition and outcome",
+  "positive_rate_background": 0.335,
+  "positive_rate_source": 0.33082454136146766
+}
