@@ -18,10 +18,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from product_discontinuation import config, narrative  # noqa: E402
 from product_discontinuation.explain import LocalExplainer, load_background, waterfall_figure  # noqa: E402
-from product_discontinuation.monitoring import (feature_drift_report, log_predictions,  # noqa: E402
-                                                prediction_summary)
+from product_discontinuation.monitoring import (assess_inputs, feature_drift_report, input_notes,  # noqa: E402
+                                                log_predictions, prediction_summary)
 from product_discontinuation.persistence import load_bundle, load_metadata, model_paths  # noqa: E402
-from product_discontinuation.predict import MEDIUM_RISK_MARGIN, predict_weekly  # noqa: E402
+from product_discontinuation.predict import apply_scenario, predict_weekly  # noqa: E402
 from product_discontinuation.train import OutputDirs  # noqa: E402
 
 RAISES, LOWERS = "#d03b3b", "#2a78d6"
@@ -31,8 +31,10 @@ RISK_STYLE = {  # status colour, tint, icon
     "Medium": ("#b7791f", "#fef7e8", "●"),
     "Low": ("#0a8a0a", "#eef8ee", "▼"),
 }
-OUTCOME = {1: "Likely to be discontinued", 0: "Likely to stay in the range"}
+# The cut-off is a review flag at about 28%, so these must not read as "more likely than not".
+OUTCOME = {1: "Flagged for discontinuation review", 0: "Not flagged for review"}
 MAX_CHART_FACTORS = 8
+RISK_FILTERS = ["All", "High", "Medium", "Low"]
 
 CSS = """
 <style>
@@ -79,7 +81,7 @@ def load_app_data():
 
 
 @st.cache_data
-def score_edition(_bundle, edition, _weekly, _history):
+def score_edition(_bundle, model_version, edition, _weekly, _history):
     rows = _weekly[_weekly["CatEdition"] == edition].drop(columns=[config.TARGET], errors="ignore")
     return predict_weekly(_bundle, rows, history=_history)
 
@@ -104,7 +106,23 @@ def edition_options():
     return options
 
 
-def result_card(probability, risk, predicted, summary_text):
+def band_evidence(metadata, risk):
+    """Observed discontinuation rate of the band on out-of-fold development predictions."""
+    row = next(b for b in metadata["risk_bands"] if b["sample"] == "development out-of-fold" and b["band"] == risk)
+    return (f"In past catalogues (validation on editions {min(metadata['cv_test_editions'])}-"
+            f"{max(metadata['cv_test_editions'])}), {row['observed_rate']:.0%} of products in the {risk} band "
+            "were discontinued.")
+
+
+def show_input_checks(bundle, feature_row):
+    messages = assess_inputs(bundle, feature_row)
+    if messages:
+        st.warning("**Check these inputs before relying on this estimate**\n\n" + "\n".join(f"- {m}" for m in messages))
+    for note in input_notes(bundle, feature_row):
+        st.caption(f"Note: {note}")
+
+
+def result_card(probability, risk, predicted, summary_text, rank_share, evidence):
     colour, tint, icon = RISK_STYLE[risk]
     left, right = st.columns([1, 1.9], gap="large")
     with left:
@@ -112,10 +130,14 @@ def result_card(probability, risk, predicted, summary_text):
                     f'<span class="badge" style="background:{colour};">{icon} {risk} risk</span>'
                     f'<div class="outcome">{OUTCOME[predicted]}</div></div>', unsafe_allow_html=True)
         st.metric("Discontinuation probability", f"{probability:.0%}",
-                  help="The model's estimated chance that this product is discontinued at the next range refresh.")
+                  help="The model's estimate, calibrated against later catalogue editions, that this product is "
+                       "discontinued at the next range refresh.")
+        st.caption(f"Higher than {rank_share:.0%} of products in this catalogue. {evidence}")
     with right:
         st.markdown("#### What this means")
         st.markdown(f'<div class="summary">{summary_text}</div>', unsafe_allow_html=True)
+        st.caption("Treat this as a calibrated estimate for prioritising review, not an exact chance: calibration "
+                   "is approximate and can shift between catalogue editions.")
 
 
 def product_snapshot(past, meta):
@@ -125,7 +147,7 @@ def product_snapshot(past, meta):
     cols[1].metric("Expected weekly sales", f"{latest.ForecastPerWeek:,.0f} units")
     price = latest.SalePriceIncVAT
     cols[2].metric("Selling price", f"£{price:,.2f}" if price > 0 else "Not recorded")
-    cols[3].metric("Weeks listed so far", f"{len(past)}")
+    cols[3].metric("Weeks listed so far", f"{int(past['WeeksOut'].max() - past['WeeksOut'].min() + 1)}")
     st.markdown(f'<p class="muted">Supplier {meta.Supplier} · Product type {meta.HierarchyLevel1} · '
                 f'Department {meta.HierarchyLevel2} · {"Imported" if meta.DIorDOM == "DI" else "Domestic"} · '
                 f'{"Seasonal" if meta.Seasonal else "Non-seasonal"}</p>', unsafe_allow_html=True)
@@ -187,7 +209,7 @@ def technical_contribution_chart(contributions, top_n=12):
     data = contributions[["feature", "contribution"]].head(top_n).copy()
     data["direction"] = data["contribution"].map(lambda c: "Raises log-odds" if c > 0 else "Lowers log-odds")
     return alt.Chart(data).mark_bar(cornerRadiusEnd=4, height=16).encode(
-        x=alt.X("contribution:Q", title="SHAP value (log-odds of DiscontinuedTF = 1)", axis=alt.Axis(gridOpacity=0.4)),
+        x=alt.X("contribution:Q", title="SHAP value (calibrated log-odds of DiscontinuedTF = 1)", axis=alt.Axis(gridOpacity=0.4)),
         y=alt.Y("feature:N", sort=None, title=None, axis=alt.Axis(labelLimit=220, ticks=False)),
         color=alt.Color("direction:N", scale=alt.Scale(domain=["Raises log-odds", "Lowers log-odds"],
                                                        range=[RAISES, LOWERS]), legend=alt.Legend(title=None, orient="top")),
@@ -199,7 +221,7 @@ def shap_details(explainer, explanation, trained_at, edition, product):
     with st.expander("How this explanation was calculated (technical SHAP view)"):
         contributions = explanation.contributions
         st.markdown(
-            f"**Method:** {explainer.method}, explaining `DiscontinuedTF = True` in log-odds over the model's "
+            f"**Method:** {explainer.method}, explaining `DiscontinuedTF = True` in calibrated log-odds over the model's "
             f"{len(explainer.columns)} original inputs. **Background:** {len(explainer.background)} rows sampled from "
             f"development editions only, stratified by edition and outcome (seed {explainer.seed}). "
             f"**Evaluations:** {explainer.max_evals}. Permutation SHAP is a seeded Monte Carlo estimate; "
@@ -226,7 +248,7 @@ def shap_details(explainer, explanation, trained_at, edition, product):
 
 def technical_details(bundle, metadata):
     with st.expander("Model information (technical)"):
-        threshold = bundle["threshold"]
+        threshold, floor, calibration = bundle["threshold"], bundle["risk_medium_floor"], metadata["calibration"]
         st.markdown(
             f"**Model:** {metadata['model_name'].replace('_', ' ').title()} · **Version:** {bundle['model_version']} · "
             f"**Trained:** {bundle.get('trained_at', 'unknown')}  \n"
@@ -234,10 +256,20 @@ def technical_details(bundle, metadata):
             f"WeeksOut = -{bundle['horizon']} and outcomes of earlier editions. `Status` is not a model input.  \n"
             f"**Training editions:** {metadata['train_editions']} · **Held-out test edition:** {metadata['test_edition']}")
         st.markdown(
-            f"**What the probability means:** the model's estimated chance that the product is discontinued "
-            f"(`DiscontinuedTF = True`) at the next refresh. Products at or above the decision threshold "
-            f"**{threshold:.3f}** (max F1 on out-of-fold development predictions) are flagged. Risk bands: "
-            f"High ≥ {threshold:.3f}; Medium ≥ max({threshold:.3f} − {MEDIUM_RISK_MARGIN}, 0); otherwise Low.")
+            f"**What the probability means:** the estimated chance that the product is discontinued "
+            f"(`DiscontinuedTF = True`) at the next refresh, after Platt calibration fitted on out-of-fold predictions "
+            f"from development editions. Risk bands: **High** ≥ {threshold:.3f} (the max-F1 decision threshold), "
+            f"**Medium** ≥ {floor:.3f}, otherwise **Low**. {metadata['risk_band_definition']['Low'].capitalize()}.")
+        st.markdown(
+            f"**Calibration on held-out edition {metadata['test_edition']}:** Brier score "
+            f"{calibration['test_raw']['brier']:.4f} → {calibration['test_calibrated']['brier']:.4f}; mean prediction "
+            f"{calibration['test_raw']['mean_predicted']:.3f} → {calibration['test_calibrated']['mean_predicted']:.3f} "
+            f"against an observed rate of {calibration['test_calibrated']['observed_rate']:.3f}; "
+            f"expected calibration error {calibration['test_raw']['ece_10_quantile_bins']:.3f} → "
+            f"{calibration['test_calibrated']['ece_10_quantile_bins']:.3f}.")
+        bands = pd.DataFrame(metadata["risk_bands"])[["sample", "band", "n", "share_of_products", "mean_predicted",
+                                                      "observed_rate", "share_of_discontinued"]]
+        st.dataframe(bands.round(3), hide_index=True)
         test = metadata["test_metrics"]
         st.markdown(f"**Held-out test performance (edition {metadata['test_edition']})**")
         cols = st.columns(6)
@@ -251,13 +283,21 @@ def health_check_tab(bundle, metadata, explainer, weekly, history):
     options = edition_options()
     c1, c2, c3 = st.columns([1.4, 1.4, 1])
     edition = options[c1.selectbox("Catalogue edition", list(options))]
-    features, preds = score_edition(bundle, edition, weekly, history)
-    ranked = preds.sort_values("probability", ascending=False)
-    labels = {int(k): f"Product {k} · {r} risk" for k, r in zip(ranked["ProductKey"], ranked["risk_category"])}
+    features, preds = score_edition(bundle, bundle["model_version"], edition, weekly, history)
+    risk_filter = c3.radio("Show products", RISK_FILTERS, horizontal=True,
+                           help="Filter the product list by risk band.")
+    shown = preds if risk_filter == "All" else preds[preds["risk_category"] == risk_filter]
+    if shown.empty:
+        st.info(f"No products in this catalogue are in the {risk_filter} risk band.")
+        return
+    ordered = shown.sort_values("ProductKey")
+    labels = {int(k): f"Product {k} · {r} risk" for k, r in zip(ordered["ProductKey"], ordered["risk_category"])}
     product = c2.selectbox("Product", list(labels), format_func=lambda k: labels.get(k, k),
-                           help="Products are listed from highest to lowest estimated risk. Type to search.")
-    c3.markdown(f"**Prediction horizon**  \n{bundle['horizon']} weeks before refresh",
-                help="The model was built to predict at this point, leaving time to act before the refresh.")
+                           help="Products are listed by product number. Type to search, or filter by risk band.")
+    counts = preds["risk_category"].value_counts(normalize=True)
+    st.caption(f"This catalogue: {counts.get('High', 0):.0%} High · {counts.get('Medium', 0):.0%} Medium · "
+               f"{counts.get('Low', 0):.0%} Low · average estimate {preds['probability'].mean():.0%} · predictions "
+               f"are made {bundle['horizon']} weeks before the refresh.")
 
     if st.button("Check product health", type="primary"):
         st.session_state["checked"] = (edition, product)
@@ -278,7 +318,10 @@ def health_check_tab(bundle, metadata, explainer, weekly, history):
     st.divider()
     summary_text = narrative.summary(probability, risk, bundle["threshold"], raising, lowering) if explanation \
         else narrative.outcome_statement(probability, risk, bundle["threshold"])
-    result_card(probability, risk, predicted, summary_text)
+    rank_share = float((preds["probability"] < probability).mean())
+    result_card(probability, risk, predicted, summary_text, rank_share, band_evidence(metadata, risk))
+    feature_row = features[features["ProductKey"] == product]
+    show_input_checks(bundle, feature_row)
     raw = weekly[(weekly["CatEdition"] == edition) & (weekly["ProductKey"] == product)]
     if edition == config.TEST_EDITION:
         actual = bool(raw[config.TARGET].iloc[0])
@@ -297,6 +340,7 @@ def health_check_tab(bundle, metadata, explainer, weekly, history):
     product_snapshot(past, past.iloc[-1])
     st.altair_chart(sales_chart(past), use_container_width=True)
     st.caption(f"Only data up to {bundle['horizon']} weeks before the refresh is used for the prediction.")
+    what_if_section(bundle, explainer, raw, past.iloc[-1], history, probability, edition, product)
     if explanation is not None:
         shap_details(explainer, explanation, trained_at, edition, product)
     technical_details(bundle, metadata)
@@ -323,6 +367,59 @@ def explanation_section(explanation, raising, lowering, predicted, risk):
     st.caption("These are prompts for review, not decisions. Combine them with your own knowledge of the range.")
 
 
+def what_if_section(bundle, explainer, raw, latest, history, probability, edition, product):
+    """Re-score an edited copy of the product through the same feature code as training."""
+    horizon = bundle["horizon"]
+    earlier = raw[raw["WeeksOut"] == -horizon - config.TREND_LOOKBACK_WEEKS]
+    has_earlier = not earlier.empty
+    st.divider()
+    st.subheader("Try a what-if scenario")
+    with st.container():  # not an expander: Streamlit collapses it on submit, which would hide the result
+        st.caption(f"Change this product's figures at the prediction point, {horizon} weeks before the refresh, and "
+                   "re-run the same model. This shows how the model responds; it does not forecast what would happen.")
+        # No min/max on these inputs: Streamlit would keep the last valid value while showing the typed one.
+        with st.form(f"what_if_{edition}_{product}"):
+            a, b, c = st.columns(3)
+            actuals = a.number_input("Average weekly sales", value=float(latest.ActualsPerWeek))
+            forecast = b.number_input("Expected weekly sales", value=float(latest.ForecastPerWeek))
+            price = c.number_input("Selling price (£)", value=float(latest.SalePriceIncVAT),
+                                   help="A price of 0 is treated as not recorded.")
+            a2, b2, c2 = st.columns(3)
+            earlier_actuals = a2.number_input("Average weekly sales 4 weeks earlier", disabled=not has_earlier,
+                                              value=float(earlier["ActualsPerWeek"].iloc[0]) if has_earlier else 0.0)
+            earlier_forecast = b2.number_input("Expected weekly sales 4 weeks earlier", disabled=not has_earlier,
+                                               value=float(earlier["ForecastPerWeek"].iloc[0]) if has_earlier else 0.0)
+            weeks = c2.number_input("Weeks listed so far", step=1, value=int(-horizon - raw["WeeksOut"].min() + 1))
+            new_to_range = st.checkbox("Treat as new to the range (no earlier catalogues)")
+            submitted = st.form_submit_button("Run scenario")
+        if not submitted:
+            return
+        try:
+            rows, scenario_history = apply_scenario(
+                raw, horizon, history, actuals=actuals, forecast=forecast, price=price, weeks_listed=weeks,
+                actuals_4_weeks_earlier=earlier_actuals if has_earlier else None,
+                forecast_4_weeks_earlier=earlier_forecast if has_earlier else None, new_to_range=new_to_range)
+            features, scored = predict_weekly(bundle, rows, history=scenario_history)
+        except ValueError as err:
+            st.error(f"This scenario could not be scored: {err}")
+            return
+        result = scored.iloc[0]
+        left, right = st.columns(2)
+        left.metric("Scenario probability", f"{result['probability']:.0%}",
+                    delta=f"{(result['probability'] - probability) * 100:+.0f} points vs. actual", delta_color="inverse")
+        right.metric("Scenario risk band", str(result["risk_category"]))
+        show_input_checks(bundle, features)
+        if explainer is not None:
+            raising, lowering = narrative.key_factors(explainer.explain(features).contributions, bundle["reference_values"])
+            first, second = st.columns(2, gap="large")
+            with first:
+                st.markdown("##### Raising the risk")
+                factor_list(raising, RAISES, "No factor noticeably raised the risk.")
+            with second:
+                st.markdown("##### Lowering the risk")
+                factor_list(lowering, LOWERS, "No factor noticeably lowered the risk.")
+
+
 def performance_section(metadata):
     st.subheader(f"Selected model: {metadata['model_name'].replace('_', ' ').title()}")
     st.write(f"Trained on editions {metadata['train_editions']}, evaluated once on held-out edition "
@@ -331,12 +428,17 @@ def performance_section(metadata):
     cols = st.columns(6)
     for col, key in zip(cols, ["roc_auc", "pr_auc", "precision", "recall", "f1", "balanced_accuracy"]):
         col.metric(key.replace("_", " ").upper(), f"{test[key]:.3f}")
+    context = metadata["calibration"]["test_edition_context"]
+    st.info(f"Edition {metadata['test_edition']} included {context['departments_fully_discontinued']} departments "
+            f"({context['share_of_test_rows']:.0%} of products) that were discontinued in full. Excluding them, test "
+            f"ROC-AUC is {context['roc_auc_excluding']:.3f} and PR-AUC is {context['pr_auc_excluding']:.3f}. The "
+            "cross-validation results below are a better guide to a typical edition.")
     st.write("Cross-validation (expanding window over editions):")
     st.dataframe(pd.DataFrame(metadata["cv_summary"]), hide_index=True)
     figures = artefact_dirs().figures
     horizon = metadata["horizon_weeks"]
-    names = [f"roc_pr_curves_h{horizon}.png", f"confusion_matrix_h{horizon}.png",
-             f"feature_importance_h{horizon}.png", "horizon_comparison_pr_auc.png"]
+    names = [f"roc_pr_curves_h{horizon}.png", f"calibration_before_after_h{horizon}.png",
+             f"confusion_matrix_h{horizon}.png", f"feature_importance_h{horizon}.png"]
     existing = [figures / n for n in names if (figures / n).exists()]
     for col, path in zip(st.columns(2) * 2, existing):
         col.image(str(path))
@@ -347,7 +449,7 @@ def monitoring_section(bundle, weekly, history):
     st.write("Live edition outcomes are unknown until the refresh, so only input and prediction "
              "distributions can be monitored now. Accuracy is tracked once labels arrive.")
     edition = config.CENSORED_EDITIONS[0]
-    features, preds = score_edition(bundle, edition, weekly, history)
+    features, preds = score_edition(bundle, bundle["model_version"], edition, weekly, history)
     summary = prediction_summary(preds)
     c1, c2, c3 = st.columns(3)
     c1.metric("Products scored", summary["n_predictions"])
@@ -368,7 +470,7 @@ def main():
     st.markdown(CSS, unsafe_allow_html=True)
     st.title("Retalix Product Health Check")
     st.markdown('<p class="app-sub">Estimate how likely a catalogue product is to be discontinued at the next '
-                'range refresh, see what drove the estimate, and decide what to review next.</p>',
+                'range refresh, see which factors moved the estimate, and decide what to review next.</p>',
                 unsafe_allow_html=True)
     try:
         bundle, metadata = load_model(config.PRIMARY_HORIZON)

@@ -121,7 +121,7 @@ def plot_calibration(y_true, probabilities, path=None, n_bins=10):
     ax.plot([0, 1], [0, 1], color="grey", linestyle=":", label="Perfect calibration")
     ax.set_xlabel("Mean predicted probability")
     ax.set_ylabel("Observed discontinuation rate")
-    ax.set_title("Calibration curve")
+    ax.set_title("Calibration curve (raw model scores)")
     ax.legend(fontsize=8)
     return _save(fig, path)
 
@@ -145,7 +145,7 @@ def plot_threshold_tradeoff(y_true, y_prob, chosen, path=None):
     ax.plot(thresholds, f1[:-1], label="F1")
     ax.axvline(chosen, color="black", linestyle="--", lw=1, label=f"Chosen = {chosen:.2f}")
     ax.set_xlabel("Probability threshold")
-    ax.set_title("Threshold trade-off (validation predictions)")
+    ax.set_title("Threshold trade-off (raw scores, validation predictions)")
     ax.legend(fontsize=8)
     return _save(fig, path)
 

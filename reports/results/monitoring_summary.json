@@ -15,11 +15,11 @@
   },
   "prediction_summary": {
     "n_predictions": 28101,
-    "mean_probability": 0.1930934391517056,
+    "mean_probability": 0.3315549138043868,
     "predicted_positive_rate": 0.4114088466602612,
     "share_high_risk": 0.4114088466602612,
-    "share_medium_risk": 0.5885911533397388,
-    "share_low_risk": 0.0
+    "share_medium_risk": 0.2054375289135618,
+    "share_low_risk": 0.383153624426177
   },
   "prediction_psi_vs_test": 0.14929989280654068,
   "features_with_significant_drift": [
@@ -35,7 +35,7 @@
     "with_outcome": 26783,
     "label_coverage": 1.0,
     "metrics": {
-      "threshold": 0.1030733023493059,
+      "threshold": 0.2825334577996326,
       "n": 26783,
       "positive_rate": 0.36388754060411455,
       "roc_auc": 0.9518194884707962,

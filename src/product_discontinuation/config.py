@@ -42,4 +42,7 @@ MODEL_FIRST_EDITION = 89
 TEST_EDITION = 93
 CV_TEST_EDITIONS = (90, 91, 92)
 
-MODEL_VERSION = "1.0.0"
+# Categories with fewer training rows than this are pooled by the one-hot encoder.
+RARE_CATEGORY_MIN_COUNT = 50
+
+MODEL_VERSION = "1.1.0"  # 1.1.0 adds Platt calibration and validated risk bands; pipeline unchanged

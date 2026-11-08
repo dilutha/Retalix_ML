@@ -10,10 +10,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import config
+from . import config, narrative
 from .data import check_columns, validate_catalogue
 from .evaluation import classification_metrics
-from .features import CATEGORICAL_FEATURES, REQUIRED_COLUMNS
+from .features import BINARY_FEATURES, CATEGORICAL_FEATURES, REQUIRED_COLUMNS
 
 PSI_MODERATE = 0.1
 PSI_SIGNIFICANT = 0.25
@@ -27,6 +27,43 @@ def validate_scoring_input(weekly):
     """Schema and integrity checks for unlabelled weekly data before scoring."""
     check_columns(weekly, REQUIRED_COLUMNS, "scoring data")
     return validate_catalogue(weekly, require_target=False)
+
+
+def build_input_profile(features, columns):
+    """Training ranges and well-supported category levels, used to warn about unusual inputs."""
+    numeric, categories = {}, {}
+    for col in columns:
+        if col in CATEGORICAL_FEATURES:
+            counts = features[col].astype(str).value_counts()
+            categories[col] = counts[counts >= config.RARE_CATEGORY_MIN_COUNT].index.tolist()
+        elif col not in BINARY_FEATURES:
+            values = features[col].dropna().astype(float)
+            numeric[col] = {"p005": float(values.quantile(0.005)), "p995": float(values.quantile(0.995))}
+    return {"numeric": numeric, "categories": categories}
+
+
+def assess_inputs(bundle, feature_row):
+    """Plain-English warnings about missing or unusual numeric inputs of one product."""
+    profile, row, messages = bundle["input_profile"], feature_row.iloc[0], []
+    for col, limits in profile["numeric"].items():
+        value = row[col]
+        if pd.isna(value):
+            expected_gap = col == "previous_discontinued" and not row["in_previous_edition"]
+            if not expected_gap:
+                messages.append(f"{narrative.describe(col, np.nan)}; the model used a typical value instead.")
+        elif value < limits["p005"] or value > limits["p995"]:
+            direction = "lower" if value < limits["p005"] else "higher"
+            messages.append(f"{narrative.label(col)} is {direction} than almost all products the model was "
+                            "trained on, so this estimate is less reliable.")
+    return messages
+
+
+def input_notes(bundle, feature_row):
+    """Lower-severity notes: rare categories are common and handled by design (pooled by the encoder)."""
+    row = feature_row.iloc[0]
+    return [f"{narrative.label(col)} {row[col]} had fewer than {config.RARE_CATEGORY_MIN_COUNT} training products, "
+            "so the model treated it as a rare group."
+            for col, levels in bundle["input_profile"]["categories"].items() if str(row[col]) not in levels]
 
 
 def _numeric_reference(values, n_bins):

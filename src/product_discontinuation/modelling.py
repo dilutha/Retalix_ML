@@ -51,7 +51,7 @@ def make_preprocessor(horizon, include_status=False, exclude=()):
     ])
     categorical_pipe = Pipeline([
         ("impute", SimpleImputer(strategy="most_frequent")),
-        ("encode", OneHotEncoder(handle_unknown="infrequent_if_exist", min_frequency=50,
+        ("encode", OneHotEncoder(handle_unknown="infrequent_if_exist", min_frequency=config.RARE_CATEGORY_MIN_COUNT,
                                  sparse_output=False)),
     ])
     return ColumnTransformer([

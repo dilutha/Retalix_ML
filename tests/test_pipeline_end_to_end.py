@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from product_discontinuation import config, monitoring
+from product_discontinuation.calibration import apply_calibration
 from product_discontinuation.features import build_features, edition_history
 from product_discontinuation.persistence import load_bundle, load_metadata, model_paths, save_bundle
 from product_discontinuation.predict import explain_prediction, predict_weekly, risk_category
@@ -53,8 +54,8 @@ def test_saved_model_reproduces_predictions(trained, weekly):
     test_rows = weekly[weekly["CatEdition"] == config.TEST_EDITION].drop(columns=[config.TARGET])
     features, preds = predict_weekly(bundle, test_rows, history=trained["history"])
     in_memory = trained["searches"][trained["selected"]].best_estimator_
-    expected = in_memory.predict_proba(features[bundle["feature_columns"]])[:, 1]
-    np.testing.assert_allclose(preds["probability"], expected)
+    raw = in_memory.predict_proba(features[bundle["feature_columns"]])[:, 1]
+    np.testing.assert_allclose(preds["probability"], apply_calibration(raw, bundle["calibrator"]))
     assert set(preds["risk_category"]) <= {"High", "Medium", "Low"}
 
 
@@ -89,7 +90,7 @@ def test_explanation_for_single_prediction(trained, weekly):
 
 
 def test_risk_category_bands():
-    assert list(risk_category([0.9, 0.45, 0.1], threshold=0.5)) == ["High", "Medium", "Low"]
+    assert list(risk_category([0.9, 0.45, 0.1], threshold=0.5, medium_floor=0.3)) == ["High", "Medium", "Low"]
 
 
 def test_horizon_study_runs(trained, weekly):

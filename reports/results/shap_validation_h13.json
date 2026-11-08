@@ -8,10 +8,10 @@
     "method": "shap.PermutationExplainer on the complete pipeline",
     "max_evals": 1000,
     "seed": 42,
-    "output": "log-odds of DiscontinuedTF = 1"
+    "output": "calibrated log-odds of DiscontinuedTF = 1"
   },
   "background": {
-    "model_version": "1.0.0",
+    "model_version": "1.1.0",
     "trained_at": "2026-11-06T11:06:24+00:00",
     "rows": 200,
     "seed": 42,
@@ -26,40 +26,40 @@
     "positive_rate_background": 0.335,
     "positive_rate_source": 0.33082454136146766
   },
-  "base_value_log_odds": -1.078735601960702,
-  "base_value_probability": 0.25374536681836923,
+  "base_value_log_odds": 0.045618507107000245,
+  "base_value_probability": 0.5114026493900928,
   "n_explained": 500,
-  "seconds_per_explanation": 0.7820788754159875,
-  "max_local_accuracy_error_log_odds": 2.5757174171303632e-14,
+  "seconds_per_explanation": 1.213610341083986,
+  "max_local_accuracy_error_log_odds": 1.7319479184152442e-14,
   "max_difference_vs_saved_test_probabilities": 0.0,
   "determinism_max_difference": 0.0,
   "convergence_vs_8000_evals": {
-    "mean_abs_difference": 0.0010265124577561087,
-    "p95_abs_difference": 0.004029336680135292,
-    "max_abs_difference": 0.015373346752592387,
+    "mean_abs_difference": 0.0009250246783282781,
+    "p95_abs_difference": 0.0036309699295476662,
+    "max_abs_difference": 0.01385343648505799,
     "top3_overlap": 1.0,
     "sign_agreement_on_meaningful": 1.0,
     "rows": 20,
-    "seconds_per_explanation_at_8000": 6.275071127100091
+    "seconds_per_explanation_at_8000": 8.818967327100108
   },
   "alternative_background_seed_43": {
-    "mean_abs_difference": 0.012899982463577226,
-    "p95_abs_difference": 0.05507791917661274,
-    "max_abs_difference": 0.08085957472978023,
+    "mean_abs_difference": 0.011624605272589955,
+    "p95_abs_difference": 0.049632553491564445,
+    "max_abs_difference": 0.07286526484800482,
     "top3_overlap": 0.9666666666666666,
     "sign_agreement_on_meaningful": 1.0,
     "rows": 20,
-    "base_value": -1.2246492983435742
+    "base_value": -0.08586920065574864
   },
   "tree_path_dependent_cross_check": {
-    "base_value": -1.2355679043701997,
-    "max_additivity_error": 6.661338147750939e-15,
+    "base_value": -0.09570832140996766,
+    "max_additivity_error": 5.773159728050814e-15,
     "spearman_global_mean_abs": 0.993984962406015,
-    "mean_abs_difference": 0.018232149261333968,
-    "p95_abs_difference": 0.08904865447289893,
-    "max_abs_difference": 0.38695276337880613,
+    "mean_abs_difference": 0.016429598957390948,
+    "p95_abs_difference": 0.08024471825643455,
+    "max_abs_difference": 0.34869606575954926,
     "top3_overlap": 0.9373333333333332,
-    "sign_agreement_on_meaningful": 0.9948453608247423
+    "sign_agreement_on_meaningful": 0.9959533444417996
   },
   "spearman_shap_vs_permutation_importance": 0.4573148123331186,
   "interventional_tree_shap_check": {
@@ -99,50 +99,6 @@
       }
     ]
   },
-  "share_of_total_mean_abs_shap_hierarchy_level2": 0.4487011802515232,
-  "local_examples": [
-    {
-      "example": "flagged",
-      "ProductKey": 52260,
-      "probability": 0.5000907274314449,
-      "risk_category": "High",
-      "actual_discontinued": 1,
-      "base_value": -1.0787356019607024,
-      "log_odds": 0.000362909729762384,
-      "summary": "This product has an elevated chance of being discontinued at the next catalogue refresh (estimated 50%). This is above the 10% level at which products are flagged for review. The product's average weekly sales level and selling price contributed most to this result. Its number of earlier catalogues lowered the estimate. Suggested next step: compare the product's sales level with similar products in its category.",
-      "raising": [
-        "Average weekly sales are about 0 units, below a typical product (about 42), which strongly raised the estimated risk.",
-        "The selling price is \u00a33.19, below a typical product (\u00a329.99), which raised the estimated risk.",
-        "The product is in department 28611, which raised the estimated risk."
-      ],
-      "lowering": [
-        "This is the product's first catalogue in the available data, which lowered the estimated risk.",
-        "Expected weekly sales are about 77 units, above a typical product (about 54), which lowered the estimated risk.",
-        "Weekly sales have been steadier from week to week than for a typical product, which lowered the estimated risk."
-      ]
-    },
-    {
-      "example": "not_flagged",
-      "ProductKey": 2555,
-      "probability": 0.0239775804764849,
-      "risk_category": "Medium",
-      "actual_discontinued": 0,
-      "base_value": -1.0787356019607024,
-      "log_odds": -3.706366310024774,
-      "summary": "This product is not flagged for discontinuation at the next catalogue refresh (estimated 2%, below the 10% review level), but it sits in the medium-risk band. The product's department and number of earlier catalogues helped keep the estimated risk down. Its changes in weekly sales raised the estimate. No immediate action is suggested; continue routine range monitoring.",
-      "raising": [
-        "Weekly sales have varied more from week to week than for a typical product, which raised the estimated risk.",
-        "The product is new to the range in this catalogue, which raised the estimated risk.",
-        "Average weekly sales have risen by about 34% over the last 4 weeks, which slightly raised the estimated risk."
-      ],
-      "lowering": [
-        "The product is in department 3163, which strongly lowered the estimated risk.",
-        "This is the product's first catalogue in the available data, which lowered the estimated risk.",
-        "Expected weekly sales are about 159 units, above a typical product (about 54), which lowered the estimated risk."
-      ]
-    }
-  ],
-  "department_season_rows": 104,
   "fully_discontinued_departments": {
     "departments": [
       "12305",
@@ -165,5 +121,49 @@
     "roc_auc_excluding": 0.927596480151973,
     "positive_rate_excluding": 0.1860787311293713,
     "rows_excluding": 20932
-  }
+  },
+  "department_season_rows": 104,
+  "share_of_total_mean_abs_shap_hierarchy_level2": 0.4487011802515233,
+  "local_examples": [
+    {
+      "example": "flagged",
+      "ProductKey": 52260,
+      "probability": 0.7345887357522097,
+      "risk_category": "High",
+      "actual_discontinued": 1,
+      "base_value": 0.04561850710700017,
+      "log_odds": 1.0180302358871616,
+      "summary": "This product has an elevated chance of being discontinued at the next catalogue refresh (estimated 73%). This is above the 28% level at which products are flagged for review. The product's average weekly sales level and selling price contributed most to this result. Its number of earlier catalogues lowered the estimate. Suggested next step: compare the product's sales level with similar products in its category.",
+      "raising": [
+        "Average weekly sales are about 0 units, below a typical product (about 42), which raised the estimated risk.",
+        "The selling price is \u00a33.19, below a typical product (\u00a329.99), which raised the estimated risk.",
+        "The product is in department 28611, which raised the estimated risk."
+      ],
+      "lowering": [
+        "This is the product's first catalogue in the available data, which lowered the estimated risk.",
+        "Expected weekly sales are about 77 units, above a typical product (about 54), which lowered the estimated risk.",
+        "Weekly sales have been steadier from week to week than for a typical product, which lowered the estimated risk."
+      ]
+    },
+    {
+      "example": "not_flagged",
+      "ProductKey": 2555,
+      "probability": 0.08929875703294252,
+      "risk_category": "Low",
+      "actual_discontinued": 0,
+      "base_value": 0.04561850710700017,
+      "log_odds": -2.322227330639238,
+      "summary": "This product has a low chance of being discontinued at the next catalogue refresh (estimated 9%, well below the 28% review level). The product's department and number of earlier catalogues helped keep the estimated risk down. Its changes in weekly sales raised the estimate. No immediate action is suggested; continue routine range monitoring.",
+      "raising": [
+        "Weekly sales have varied more from week to week than for a typical product, which raised the estimated risk.",
+        "The product is new to the range in this catalogue, which raised the estimated risk.",
+        "Average weekly sales have risen by about 34% over the last 4 weeks, which slightly raised the estimated risk."
+      ],
+      "lowering": [
+        "The product is in department 3163, which strongly lowered the estimated risk.",
+        "This is the product's first catalogue in the available data, which lowered the estimated risk.",
+        "Expected weekly sales are about 159 units, above a typical product (about 54), which lowered the estimated risk."
+      ]
+    }
+  ]
 }

@@ -50,7 +50,7 @@ def run(dirs, horizon=config.PRIMARY_HORIZON):
     log_predictions(test_preds, bundle, source="backtest", path=log_path)
     outcomes = test[config.GROUP_KEYS + [config.TARGET]].drop_duplicates(config.GROUP_KEYS)
     logged = pd.read_csv(log_path)
-    backtest_log = logged[logged["source"] == "backtest"]
+    backtest_log = logged[(logged["source"] == "backtest") & (logged["model_version"] == bundle["model_version"])]
     summary["backtest_outcome_monitoring"] = evaluate_against_outcomes(
         backtest_log, outcomes, bundle["threshold"])
 

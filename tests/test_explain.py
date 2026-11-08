@@ -27,8 +27,8 @@ def setup(weekly):
     columns = all_feature_columns(HORIZON)
     dev = features[(features.CatEdition >= config.MODEL_FIRST_EDITION) & (features.CatEdition < config.TEST_EDITION)]
     pipe = make_pipeline("hist_gradient_boosting", HORIZON).fit(dev[columns], dev[config.TARGET])
-    bundle = {"pipeline": pipe, "feature_columns": columns, "threshold": 0.5, "horizon": HORIZON,
-              "reference_values": reference_values(dev[columns], columns)}
+    bundle = {"pipeline": pipe, "feature_columns": columns, "threshold": 0.5, "risk_medium_floor": 0.25,
+              "horizon": HORIZON, "reference_values": reference_values(dev[columns], columns)}
     test = features[features.CatEdition == config.TEST_EDITION].reset_index(drop=True)
     background = build_background(dev, columns, size=40)
     explainer = LocalExplainer(bundle, background, max_evals=300)
@@ -299,7 +299,7 @@ def test_real_app_renders_explanation_quickly():
     first_check = time.perf_counter() - start
     assert not app.exception, [e.value for e in app.exception]
     assert any(m.label == "Discontinuation probability" for m in app.metric)
-    assert any(s.value == "Why was this product flagged?" for s in app.subheader)
+    assert any(s.value in ("Why was this product flagged?", "What influenced this result?") for s in app.subheader)
     assert any("Suggested next steps" == s.value for s in app.subheader)
     assert any("technical SHAP view" in e.label for e in app.expander)
     assert any("How to read this chart" in m.value for m in app.markdown)

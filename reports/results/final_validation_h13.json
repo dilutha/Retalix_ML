@@ -1,0 +1,162 @@
+{
+  "calibration_provenance": {
+    "oof_editions_used": [
+      90,
+      91,
+      92
+    ],
+    "oof_rows": 66043,
+    "development_features_identical_without_93_94": true,
+    "saved_a_b": [
+      0.9011334166857777,
+      1.0177032058024367
+    ],
+    "refit_without_93_94_a_b": [
+      0.9011334166857777,
+      1.0177032058024367
+    ],
+    "max_abs_difference_a_b": 0.0,
+    "row_order_sensitivity_a_b_when_rows_are_sorted": [
+      0.890146256084833,
+      1.009896178102814
+    ],
+    "dense_rank_identical_raw_vs_calibrated": {
+      "development": true,
+      "test": true,
+      "live": true
+    },
+    "app_path_vs_hand_formula_max_difference": 0.0,
+    "held_out_recomputed_by_hand": {
+      "n": 26783,
+      "editions": [
+        93
+      ],
+      "brier_raw": 0.12569845130889104,
+      "brier_calibrated": 0.08842010257180453,
+      "mean_calibrated": 0.36223274429606,
+      "observed_rate": 0.36388754060411455
+    }
+  },
+  "probability_metrics": {
+    "test_raw": {
+      "n": 26783,
+      "observed_rate": 0.36388754060411455,
+      "mean_predicted": 0.22485789694460695,
+      "brier": 0.12569845130889104,
+      "brier_of_base_rate": 0.23147339839720343,
+      "log_loss": 0.3790255693831458,
+      "ece_10_quantile_bins": 0.14352853424696657,
+      "roc_auc": 0.9518194884707962,
+      "pr_auc": 0.9146598721484012
+    },
+    "test_calibrated": {
+      "n": 26783,
+      "observed_rate": 0.36388754060411455,
+      "mean_predicted": 0.36223274429606,
+      "brier": 0.08842010257180453,
+      "brier_of_base_rate": 0.23147339839720343,
+      "log_loss": 0.3067544957053462,
+      "ece_10_quantile_bins": 0.09311654640418625,
+      "roc_auc": 0.9518194884707962,
+      "pr_auc": 0.9146598721484012
+    }
+  },
+  "edition_93_department_cluster_bootstrap": {
+    "roc_auc_95": [
+      0.9312461957435065,
+      0.9707952595717979
+    ],
+    "pr_auc_95": [
+      0.8366009705930842,
+      0.9655952596776131
+    ],
+    "departments": 17
+  },
+  "cv_department_cluster_bootstrap": {
+    "90": {
+      "roc_auc_95": [
+        0.8344329910226658,
+        0.9504726108677886
+      ],
+      "pr_auc_95": [
+        0.7062906115729753,
+        0.9384136683512764
+      ],
+      "departments": 26
+    },
+    "91": {
+      "roc_auc_95": [
+        0.676684096098068,
+        0.8879713367179565
+      ],
+      "pr_auc_95": [
+        0.5295126024422616,
+        0.7222311969908565
+      ],
+      "departments": 17
+    },
+    "92": {
+      "roc_auc_95": [
+        0.7192835704919085,
+        0.8830609083439481
+      ],
+      "pr_auc_95": [
+        0.5154409057500017,
+        0.7054162046942573
+      ],
+      "departments": 17
+    }
+  },
+  "edition_93_exit_departments": {
+    "departments": 10,
+    "test_mean_raw_score_in_those_departments": 0.4813103581020222,
+    "test_mean_raw_score_elsewhere": 0.1531732346938886,
+    "training_rate_by_edition_those_departments": {
+      "89": 0.16835114062951198,
+      "90": 0.20858191831115191,
+      "91": 0.5024351924587588,
+      "92": 0.6349666881581775
+    },
+    "training_rate_by_edition_other_departments": {
+      "89": 0.42342342342342343,
+      "90": 0.47652064292467694,
+      "91": 0.05599758283815087,
+      "92": 0.05808997632202052
+    }
+  },
+  "input_warning_rates": {
+    "edition_93_sample": {
+      "products": 3000,
+      "share_with_any_warning": 0.26666666666666666,
+      "mean_warnings": 0.31033333333333335,
+      "share_with_rare_group_note": 0.27366666666666667
+    },
+    "edition_94_sample": {
+      "products": 3000,
+      "share_with_any_warning": 0.29733333333333334,
+      "mean_warnings": 0.35833333333333334,
+      "share_with_rare_group_note": 0.3313333333333333
+    }
+  },
+  "shap_and_wording": {
+    "n_products": 150,
+    "max_additivity_error_vs_displayed_calibrated_log_odds": 1.2434497875801753e-14,
+    "max_probability_difference_shap_vs_displayed": 0.0,
+    "sentence_checks": {
+      "sentences": 812,
+      "wrong_direction": 0,
+      "wrong_list": 0,
+      "wrong_fact": 0,
+      "causal": 0,
+      "negligible_mentioned": 0
+    },
+    "wrong_fact_examples": [],
+    "top_factor_faithfulness": {
+      "checked": 150,
+      "same_sign": 150
+    },
+    "causal_terms_in_source": [
+      "cause"
+    ]
+  }
+}

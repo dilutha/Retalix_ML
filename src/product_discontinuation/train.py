@@ -16,6 +16,7 @@ import pandas as pd
 
 from . import config
 from . import evaluation as ev
+from .calibration import attach_calibration
 from .data import (find_incomplete_editions, load_catalogue, load_product_details,
                    merge_product_details, split_labelled, validate_catalogue, validate_product_details)
 from .explain import build_background, save_background
@@ -237,6 +238,8 @@ def train_primary(weekly, history, horizon, model_names, n_iter, dirs):
         "n_test_rows": len(test),
         "random_state": config.RANDOM_STATE,
     }
+    bundle, metadata = attach_calibration(bundle, metadata, oof, y_dev.loc[oof.index], dev.loc[oof.index, "CatEdition"],
+                                          dev, test, final_probs, horizon, dirs)
     model_path, meta_path = save_bundle(bundle, metadata, horizon, dirs.models, dirs.metadata)
     save_background(build_background(dev, columns), dev,
                     {"model_version": config.MODEL_VERSION, "trained_at": json.loads(meta_path.read_text())["trained_at"]},

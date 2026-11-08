@@ -1,0 +1,63 @@
+{
+  "calibrator": {
+    "method": "platt",
+    "a": 0.9011334166857777,
+    "b": 1.0177032058024367
+  },
+  "fitted_on": "expanding-window out-of-fold predictions, development editions only",
+  "raw_decision_threshold": 0.1030733023493059,
+  "decision_threshold": 0.2825334577996326,
+  "risk_medium_floor": 0.1438551611639104,
+  "low_band_miss_budget": 0.05,
+  "development_oof_raw": {
+    "n": 66043,
+    "observed_rate": 0.3249852368911164,
+    "mean_predicted": 0.18697085432175453,
+    "brier": 0.1744394731330548,
+    "brier_of_base_rate": 0.21936983269394136,
+    "log_loss": 0.5346524234617089,
+    "ece_10_quantile_bins": 0.13801438256936188,
+    "roc_auc": 0.8517322266096001,
+    "pr_auc": 0.7273218734667763
+  },
+  "development_oof_calibrated_in_sample": {
+    "n": 66043,
+    "observed_rate": 0.3249852368911164,
+    "mean_predicted": 0.32500980233187143,
+    "brier": 0.14638853417762496,
+    "brier_of_base_rate": 0.21936983269394136,
+    "log_loss": 0.4463235613532577,
+    "ece_10_quantile_bins": 0.038615957882847746,
+    "roc_auc": 0.8517322266096001,
+    "pr_auc": 0.7273218734667763
+  },
+  "test_raw": {
+    "n": 26783,
+    "observed_rate": 0.36388754060411455,
+    "mean_predicted": 0.22485789694460695,
+    "brier": 0.12569845130889104,
+    "brier_of_base_rate": 0.23147339839720343,
+    "log_loss": 0.3790255693831458,
+    "ece_10_quantile_bins": 0.14352853424696657,
+    "roc_auc": 0.9518194884707962,
+    "pr_auc": 0.9146598721484012
+  },
+  "test_calibrated": {
+    "n": 26783,
+    "observed_rate": 0.36388754060411455,
+    "mean_predicted": 0.36223274429606,
+    "brier": 0.08842010257180453,
+    "brier_of_base_rate": 0.23147339839720343,
+    "log_loss": 0.3067544957053462,
+    "ece_10_quantile_bins": 0.09311654640418625,
+    "roc_auc": 0.9518194884707962,
+    "pr_auc": 0.9146598721484012
+  },
+  "test_edition_context": {
+    "departments_fully_discontinued": 10,
+    "share_of_test_rows": 0.2184594705596834,
+    "roc_auc_excluding": 0.927596480151973,
+    "pr_auc_excluding": 0.8117592010227572,
+    "positive_rate_excluding": 0.1860787311293713
+  }
+}

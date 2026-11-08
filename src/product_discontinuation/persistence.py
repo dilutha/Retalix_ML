@@ -10,7 +10,8 @@ import sklearn
 from . import config
 
 REQUIRED_BUNDLE_KEYS = {"pipeline", "model_name", "horizon", "include_status", "threshold",
-                        "feature_columns", "model_version"}
+                        "feature_columns", "model_version", "calibrator", "risk_medium_floor",
+                        "input_profile"}
 
 
 def model_paths(horizon, models_dir=None, metadata_dir=None):
@@ -60,7 +61,8 @@ def load_bundle(path):
     bundle = joblib.load(path)
     missing = REQUIRED_BUNDLE_KEYS - set(bundle)
     if missing:
-        raise ValueError(f"{path.name} is not a valid model bundle; missing {sorted(missing)}")
+        raise ValueError(f"{path.name} is not a valid model bundle; missing {sorted(missing)}. "
+                         "Run: python -m product_discontinuation.recalibrate")
     if bundle.get("sklearn_version") != sklearn.__version__:
         print(f"Warning: model trained with scikit-learn {bundle.get('sklearn_version')}, "
               f"running {sklearn.__version__}")

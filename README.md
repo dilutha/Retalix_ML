@@ -24,7 +24,10 @@ src/product_discontinuation/
   modelling.py     preprocessing (ColumnTransformer), models, edition CV, hyperparameter search
   evaluation.py    metrics, threshold selection, plots
   persistence.py   joblib model bundle + JSON metadata
-  predict.py       inference, risk categories, feature-reset sensitivity analysis (not SHAP)
+  predict.py       inference, risk categories, what-if scenarios, feature-reset sensitivity analysis (not SHAP)
+  calibration.py   Platt calibration, rolling-origin comparison, validated risk bands
+  recalibrate.py   adds calibration to an already trained model without refitting it
+  final_validation.py  pre-submission evidence: calibration provenance, band budgets, generalisation, SHAP wording
   explain.py       SHAP local explanations for the deployed pipeline (PermutationExplainer)
   shap_analysis.py builds the SHAP background and the explainability evidence
   narrative.py     plain-English wording of predictions, explanations and next steps
@@ -58,6 +61,8 @@ pytest                                          # ~40 s
 python -m product_discontinuation.train         # ~30-60 min on the full data
 python -m product_discontinuation.monitor       # ~30 s
 python -m product_discontinuation.shap_analysis # ~10 min, SHAP background and evidence
+python -m product_discontinuation.recalibrate   # ~30 s, only for a model saved before version 1.1.0
+python -m product_discontinuation.final_validation  # ~8 min, reports/results/final_*_h13.*; trains nothing it saves
 python -m streamlit run deployment/app.py
 ```
 
@@ -69,13 +74,36 @@ Quick development run on a product sample (outputs go to a separate folder):
 python -m product_discontinuation.train --sample-frac 0.1 --n-iter 2 --output-root /tmp/pd_dev
 ```
 
+## Calibration and risk bands (model version 1.1.0)
+
+The fitted pipeline is unchanged from version 1.0.0; there was no retraining and no change to ROC-AUC, PR-AUC or the
+set of flagged products. Raw model probabilities were too low on later editions (edition 93: mean 0.225, observed
+0.364), so displayed probabilities are Platt-calibrated.
+
+| Item | Implementation |
+|---|---|
+| Calibrator | `log-odds(calibrated) = 0.901 * log-odds(raw) + 1.018`, fitted on out-of-fold predictions of editions 90-92 |
+| Why Platt | Better or equal Brier than isotonic in rolling-origin checks on editions 91-92; preserves the ranking; rescales SHAP exactly |
+| High band | Calibrated probability >= 0.283, the existing max-F1 threshold (raw 0.103) mapped through the calibrator |
+| Medium band | Calibrated probability >= 0.144 |
+| Low band | Below the floor that leaves at most 5% of discontinued development products in this band |
+| Evidence | `reports/results/calibration_h13.json`, `calibration_rolling_origin_h13.csv`, `risk_bands_h13.csv`, `reliability_test_h13.csv` |
+
+Evaluation tables written by training before calibration (`test_metrics_h13.csv`, `threshold_table_*`) stay on the raw
+scale so the model comparison remains reproducible. Edition 93's 0.952 ROC-AUC is helped by ten departments that were
+discontinued in full; excluding them it is 0.928 (PR-AUC 0.812), and cross-validated ROC-AUC is 0.846 (0.79-0.91 per edition).
+The model relies heavily on department membership: without `HierarchyLevel2` edition 93 ROC-AUC is 0.800, and for departments
+never seen in training it is 0.57-0.77 across editions. See `final_generalisation_h13.csv` and `final_diagnostic_refits_h13.csv`.
+
 ## Product Health Check app and explainability
 
 `python -m streamlit run deployment/app.py` opens the **Retalix Product Health Check**. Choose a catalogue edition
 and product and press *Check product health* to see the predicted outcome, probability and risk band, a plain-English
 summary, the factors raising and lowering the estimate, and suggested review steps. A collapsed technical section
-shows the SHAP waterfall plot, top contributors and interpretation notes. Predictions come from the unchanged
+shows the SHAP waterfall plot, top contributors and interpretation notes. Predictions come from the shared
 `predict_weekly` path; explanations are a separate layer and never alter a probability, threshold or risk band.
+The product list is ordered by product number and can be filtered by risk band, and a what-if section re-scores edited
+figures through the same feature code as training, with warnings for missing or unusual inputs.
 
 Prepare the explanations once after training (a training run also writes the background):
 
@@ -89,7 +117,7 @@ python -m product_discontinuation.shap_analysis    # ~10 min; trains nothing
 |---|---|
 | Explainer | `shap.PermutationExplainer` on the complete fitted pipeline, 1,000 maximum evaluations, seed 42 |
 | Why | Takes an explicit background, explains the exact pipeline, and needs no mapping of one-hot columns back to inputs |
-| Explained output | Log-odds of the positive class `DiscontinuedTF = 1`, the scale on which the boosted model is additive |
+| Explained output | Calibrated log-odds of the positive class `DiscontinuedTF = 1`, so values add up to the displayed probability |
 | Inputs | The model's 20 original feature columns; categorical values are reversibly encoded only for SHAP's masker |
 | Background | 200 rows of development editions 89-92, never edition 93 or 94, in `models/trained/shap_background_h13.parquet` |
 | Sampling | Systematic sample of shuffled rows ordered by edition and outcome (seed 42), so strata are proportional |

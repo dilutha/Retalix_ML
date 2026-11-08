@@ -2,8 +2,9 @@
 
 Method: ``shap.PermutationExplainer`` applied to the complete fitted pipeline (preprocessing
 plus classifier) over its original input columns, with an independent masker built from a
-stratified sample of development editions. The explained output is the log-odds of the
-positive class (DiscontinuedTF = 1), the scale on which the boosted model is additive.
+stratified sample of development editions. The explained output is the calibrated log-odds of
+the positive class (DiscontinuedTF = 1). Platt calibration is linear on this scale, so the
+values describe exactly the probability shown to the user.
 
 Permutation SHAP is a Monte Carlo estimate of the Shapley values, but it satisfies local
 accuracy exactly: contributions always sum to f(x) - E[f(background)].
@@ -23,7 +24,9 @@ import shap
 from scipy.special import expit, logit
 
 from . import config
+from .calibration import calibrated_log_odds
 from .features import CATEGORICAL_FEATURES
+from .predict import positive_probability
 
 ADDITIVITY_TOLERANCE = 1e-6
 BACKGROUND_SIZE = 200
@@ -127,6 +130,9 @@ def tree_path_dependent_values(bundle, rows):
                                   explainer.expected_value)
     groups = output_feature_groups(preprocess, columns)
     table = pd.DataFrame(values).T.groupby(groups).sum().T[columns]
+    calibrator = bundle.get("calibrator")
+    if calibrator is not None:
+        table, base = table * calibrator["a"], float(calibrated_log_odds(base, calibrator))
     return table, base
 
 
@@ -147,7 +153,7 @@ class LocalExplainer:
     method = "shap.PermutationExplainer on the complete pipeline"
 
     def __init__(self, bundle, background, max_evals=MAX_EVALS, seed=config.RANDOM_STATE):
-        self.pipeline = bundle["pipeline"]
+        self.bundle, self.pipeline = bundle, bundle["pipeline"]
         self.columns = list(bundle["feature_columns"])
         self.max_evals, self.seed = max_evals, seed
         if list(self.pipeline.classes_) != [0, 1]:
@@ -164,7 +170,8 @@ class LocalExplainer:
 
     def _log_odds(self, frame):
         probability = self.pipeline.predict_proba(frame)[:, 1]
-        return logit(np.clip(probability, _PROBABILITY_CLIP, 1 - _PROBABILITY_CLIP))
+        return calibrated_log_odds(logit(np.clip(probability, _PROBABILITY_CLIP, 1 - _PROBABILITY_CLIP)),
+                                   self.bundle.get("calibrator"))
 
     def _encode(self, frame, levels):
         """Reversible numeric form of the inputs, required by SHAP's tabular masker."""
@@ -209,7 +216,7 @@ class LocalExplainer:
         values, base = positive_class(result.values, result.base_values)
         if values.shape != (1, len(self.columns)):
             raise RuntimeError(f"unexpected SHAP output shape {values.shape}")
-        probability = float(self.pipeline.predict_proba(row)[0, 1])
+        probability = float(positive_probability(self.bundle, row)[0])
         total = base + values.sum()
         if abs(float(expit(total)) - probability) > ADDITIVITY_TOLERANCE:
             raise RuntimeError(f"SHAP values do not reproduce the prediction "
@@ -233,5 +240,5 @@ def waterfall_figure(explanation, max_display=12):
         plt.figure()
         shap.plots.waterfall(data, max_display=max_display, show=False)
         figure = plt.gcf()
-        figure.axes[0].set_xlabel("Log-odds of DiscontinuedTF = 1", labelpad=26)
+        figure.axes[0].set_xlabel("Log-odds of DiscontinuedTF = 1 (calibrated)", labelpad=26)
     return figure

@@ -221,7 +221,7 @@ def run(dirs, horizon=config.PRIMARY_HORIZON, n_global=500):
     report = {
         "versions": {"shap": shap.__version__, "sklearn": sklearn.__version__, "numpy": np.__version__},
         "explainer": {"method": explainer.method, "max_evals": MAX_EVALS, "seed": explainer.seed,
-                      "output": "log-odds of DiscontinuedTF = 1"},
+                      "output": "calibrated log-odds of DiscontinuedTF = 1"},
         "background": json.loads(background_paths(horizon, dirs.models, dirs.metadata)[1].read_text()),
         "base_value_log_odds": explainer.base_value,
         "base_value_probability": float(1 / (1 + np.exp(-explainer.base_value))),

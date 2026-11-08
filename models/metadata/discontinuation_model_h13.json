@@ -2,8 +2,8 @@
   "model_name": "hist_gradient_boosting",
   "horizon_weeks": 13,
   "prediction_unit": "product within a catalogue edition, observed at WeeksOut = -horizon",
-  "decision_threshold": 0.1030733023493059,
-  "threshold_method": "max F1 on out-of-fold predictions of development editions",
+  "decision_threshold": 0.2825334577996326,
+  "threshold_method": "max F1 on out-of-fold development predictions, mapped through the Platt calibrator",
   "feature_columns": [
     "log_price",
     "log_actuals",
@@ -76,8 +76,8 @@
     }
   ],
   "test_metrics": {
-    "threshold": 0.1030733023493059,
-    "n": 26783.0,
+    "threshold": 0.2825334577996326,
+    "n": 26783,
     "positive_rate": 0.36388754060411455,
     "roc_auc": 0.9518194884707962,
     "pr_auc": 0.9146598721484012,
@@ -86,16 +86,142 @@
     "f1": 0.8357966101694915,
     "balanced_accuracy": 0.8824015116313342,
     "accuracy": 0.8643542545644626,
-    "tn": 13904.0,
-    "fp": 3133.0,
-    "fn": 500.0,
-    "tp": 9246.0
+    "tn": 13904,
+    "fp": 3133,
+    "fn": 500,
+    "tp": 9246
   },
   "n_train_rows": 89286,
   "n_test_rows": 26783,
   "random_state": 42,
-  "model_version": "1.0.0",
+  "model_version": "1.1.0",
   "trained_at": "2026-11-06T11:06:24+00:00",
   "sklearn_version": "1.7.2",
-  "model_file": "discontinuation_model_h13.joblib"
+  "model_file": "discontinuation_model_h13.joblib",
+  "raw_decision_threshold": 0.1030733023493059,
+  "calibration": {
+    "calibrator": {
+      "method": "platt",
+      "a": 0.9011334166857777,
+      "b": 1.0177032058024367
+    },
+    "fitted_on": "expanding-window out-of-fold predictions, development editions only",
+    "raw_decision_threshold": 0.1030733023493059,
+    "decision_threshold": 0.2825334577996326,
+    "risk_medium_floor": 0.1438551611639104,
+    "low_band_miss_budget": 0.05,
+    "development_oof_raw": {
+      "n": 66043,
+      "observed_rate": 0.3249852368911164,
+      "mean_predicted": 0.18697085432175453,
+      "brier": 0.1744394731330548,
+      "brier_of_base_rate": 0.21936983269394136,
+      "log_loss": 0.5346524234617089,
+      "ece_10_quantile_bins": 0.13801438256936188,
+      "roc_auc": 0.8517322266096001,
+      "pr_auc": 0.7273218734667763
+    },
+    "development_oof_calibrated_in_sample": {
+      "n": 66043,
+      "observed_rate": 0.3249852368911164,
+      "mean_predicted": 0.32500980233187143,
+      "brier": 0.14638853417762496,
+      "brier_of_base_rate": 0.21936983269394136,
+      "log_loss": 0.4463235613532577,
+      "ece_10_quantile_bins": 0.038615957882847746,
+      "roc_auc": 0.8517322266096001,
+      "pr_auc": 0.7273218734667763
+    },
+    "test_raw": {
+      "n": 26783,
+      "observed_rate": 0.36388754060411455,
+      "mean_predicted": 0.22485789694460695,
+      "brier": 0.12569845130889104,
+      "brier_of_base_rate": 0.23147339839720343,
+      "log_loss": 0.3790255693831458,
+      "ece_10_quantile_bins": 0.14352853424696657,
+      "roc_auc": 0.9518194884707962,
+      "pr_auc": 0.9146598721484012
+    },
+    "test_calibrated": {
+      "n": 26783,
+      "observed_rate": 0.36388754060411455,
+      "mean_predicted": 0.36223274429606,
+      "brier": 0.08842010257180453,
+      "brier_of_base_rate": 0.23147339839720343,
+      "log_loss": 0.3067544957053462,
+      "ece_10_quantile_bins": 0.09311654640418625,
+      "roc_auc": 0.9518194884707962,
+      "pr_auc": 0.9146598721484012
+    },
+    "test_edition_context": {
+      "departments_fully_discontinued": 10,
+      "share_of_test_rows": 0.2184594705596834,
+      "roc_auc_excluding": 0.927596480151973,
+      "pr_auc_excluding": 0.8117592010227572,
+      "positive_rate_excluding": 0.1860787311293713
+    }
+  },
+  "risk_bands": [
+    {
+      "sample": "development out-of-fold",
+      "band": "Low",
+      "n": 24717,
+      "share_of_products": 0.3742561664370183,
+      "mean_predicted": 0.07881525354522481,
+      "observed_rate": 0.04345187522757616,
+      "share_of_discontinued": 0.05003960303778596
+    },
+    {
+      "sample": "development out-of-fold",
+      "band": "Medium",
+      "n": 12808,
+      "share_of_products": 0.193934254955105,
+      "mean_predicted": 0.20408525282516116,
+      "observed_rate": 0.2685040599625234,
+      "share_of_discontinued": 0.16022923170106695
+    },
+    {
+      "sample": "development out-of-fold",
+      "band": "High",
+      "n": 28518,
+      "share_of_products": 0.43180957860787667,
+      "mean_predicted": 0.592700113449113,
+      "observed_rate": 0.5943614559225752,
+      "share_of_discontinued": 0.7897311652611471
+    },
+    {
+      "sample": "held-out test",
+      "band": "Low",
+      "n": 11045,
+      "share_of_products": 0.41238845536347685,
+      "mean_predicted": 0.08197695128652217,
+      "observed_rate": 0.01702127659574468,
+      "share_of_discontinued": 0.01928996511389288
+    },
+    {
+      "sample": "held-out test",
+      "band": "Medium",
+      "n": 3359,
+      "share_of_products": 0.1254153754247097,
+      "mean_predicted": 0.19999361733073684,
+      "observed_rate": 0.09288478713902948,
+      "share_of_discontinued": 0.03201313359326903
+    },
+    {
+      "sample": "held-out test",
+      "band": "High",
+      "n": 12379,
+      "share_of_products": 0.46219616921181345,
+      "mean_predicted": 0.6563103322487917,
+      "observed_rate": 0.7469100896679861,
+      "share_of_discontinued": 0.9486969012928381
+    }
+  ],
+  "risk_band_definition": {
+    "High": "at or above the decision threshold",
+    "Medium": "from the Low-band floor up to the decision threshold",
+    "Low": "below the floor that leaves at most 5% of discontinued development products in this band"
+  },
+  "calibrated_at": "2026-11-08T14:25:39+00:00"
 }

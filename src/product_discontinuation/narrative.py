@@ -116,10 +116,10 @@ def describe(feature, value, typical=None):
     if feature == "forecast_to_actual":
         ratio = math.exp(value)
         if abs(ratio - 1) < 0.10:
-            return "Actual sales so far are close to the forecast"
+            return "Average sales so far are close to the forecast for the remaining weeks"
         if ratio > 1:
-            return f"Actual sales so far are about {1 - 1 / ratio:.0%} below the forecast"
-        return f"Actual sales so far are about {1 / ratio - 1:.0%} above the forecast"
+            return f"Average sales so far are about {1 - 1 / ratio:.0%} below the forecast for the remaining weeks"
+        return f"Average sales so far are about {1 / ratio - 1:.0%} above the forecast for the remaining weeks"
     if feature in ("log_actuals", "log_forecast"):
         units, ref = math.expm1(value), math.expm1(typical) if typical is not None else None
         what = "Average weekly sales are" if feature == "log_actuals" else "Expected weekly sales are"
